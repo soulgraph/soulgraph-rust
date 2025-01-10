@@ -1,5 +1,5 @@
 pub mod entity;
-pub mod memory;
+pub mod memories;
 pub mod personality;
 pub mod relationship;
 pub mod soul;
