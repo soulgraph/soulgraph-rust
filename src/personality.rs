@@ -1,7 +1,21 @@
+mod traits;
+
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error, fmt};
+use traits::Trait;
 
 use crate::Soulgraph;
+
+#[derive(Debug)]
+pub struct CorruptPersonality;
+
+impl fmt::Display for CorruptPersonality {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "personality is corrupted")
+    }
+}
+
+impl error::Error for CorruptPersonality {}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Personality {
@@ -30,26 +44,52 @@ impl Default for Personality {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Trait {
-    pub r#trait: String,
-    pub strength: f32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expression_rules: Option<Vec<String>>,
+#[derive(Default)]
+pub struct PersonalityBuilder {
+    core_traits: Vec<Trait>,
+    metadata: Option<HashMap<String, serde_json::Value>>,
 }
 
-#[derive(Debug)]
-pub struct CorruptPersonality;
+impl PersonalityBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-impl fmt::Display for CorruptPersonality {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "personality is corrupted")
+    pub fn add_trait(mut self, trait_: Trait) -> Self {
+        self.core_traits.push(trait_);
+        self
+    }
+
+    pub fn set_metadata(mut self, key: &str, value: serde_json::Value) -> Self {
+        if self.metadata.is_none() {
+            self.metadata = Some(HashMap::new());
+        }
+        if let Some(metadata) = self.metadata.as_mut() {
+            metadata.insert(key.to_string(), value);
+        }
+        self
+    }
+
+    pub fn build(self) -> Personality {
+        Personality {
+            core_traits: self.core_traits,
+            metadata: self.metadata,
+        }
     }
 }
 
-impl error::Error for CorruptPersonality {}
-
 impl Personality {
+    pub fn new() -> Self {
+        Self {
+            core_traits: Vec::new(),
+            metadata: None,
+        }
+    }
+
+    pub fn builder() -> PersonalityBuilder {
+        PersonalityBuilder::new()
+    }
+
     /// Get the `Personality` with the given `id`.
     pub async fn get(id: &str, soul: Soulgraph) -> Result<Personality, CorruptPersonality> {
         if let Ok(response) = soul.get(format!("/personality/{id}").as_str()).await {
