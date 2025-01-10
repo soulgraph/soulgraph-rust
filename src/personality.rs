@@ -145,3 +145,125 @@ impl Personality {
         }
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use traits::TraitBuilder;
+
+    #[test]
+    fn test_personality_builder_empty() {
+        let personality = Personality::builder().build();
+
+        assert!(personality.core_traits.is_empty());
+        assert!(personality.metadata.is_none());
+    }
+
+    #[test]
+    fn test_personality_builder_single_trait() {
+        let trait_ = TraitBuilder::new("kind")
+            .strength(0.7)
+            .add_expression_rule("helps others")
+            .build();
+
+        let personality = Personality::builder().add_trait(trait_).build();
+
+        assert_eq!(personality.core_traits.len(), 1);
+        let added_trait = &personality.core_traits[0];
+        assert_eq!(added_trait.r#trait, "kind");
+        assert_eq!(added_trait.strength, 0.7);
+        assert_eq!(
+            added_trait.expression_rules.as_ref().unwrap()[0],
+            "helps others"
+        );
+    }
+
+    #[test]
+    fn test_personality_builder_metadata() {
+        let personality = Personality::builder()
+            .set_metadata("version", serde_json::Value::String("1.0".to_string()))
+            .set_metadata("author", serde_json::Value::String("test".to_string()))
+            .build();
+
+        assert!(personality.metadata.is_some());
+        let metadata = personality.metadata.unwrap();
+        assert_eq!(metadata.len(), 2);
+        assert_eq!(metadata.get("version").unwrap(), "1.0");
+        assert_eq!(metadata.get("author").unwrap(), "test");
+    }
+
+    #[test]
+    fn test_personality_builder_complex() {
+        let trait1 = TraitBuilder::new("intelligent")
+            .strength(0.9)
+            .add_expression_rule("solves problems")
+            .build();
+
+        let trait2 = TraitBuilder::new("creative")
+            .strength(0.8)
+            .add_expression_rule("thinks outside the box")
+            .build();
+
+        let personality = Personality::builder()
+            .add_trait(trait1)
+            .add_trait(trait2)
+            .set_metadata("created_at", serde_json::Value::String("2024".to_string()))
+            .set_metadata(
+                "version",
+                serde_json::Value::Number(serde_json::Number::from(1)),
+            )
+            .build();
+
+        // Test traits
+        assert_eq!(personality.core_traits.len(), 2);
+        assert_eq!(personality.core_traits[0].r#trait, "intelligent");
+        assert_eq!(personality.core_traits[1].r#trait, "creative");
+
+        // Test metadata
+        let metadata = personality.metadata.unwrap();
+        assert_eq!(metadata.len(), 2);
+        assert_eq!(metadata.get("created_at").unwrap(), "2024");
+        assert_eq!(metadata.get("version").unwrap().as_i64().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_personality_builder_method_chaining_order() {
+        let trait_ = TraitBuilder::new("adaptable").build();
+
+        let personality1 = Personality::builder()
+            .add_trait(trait_.clone())
+            .set_metadata("key", serde_json::Value::String("value".to_string()))
+            .build();
+
+        let personality2 = Personality::builder()
+            .set_metadata("key", serde_json::Value::String("value".to_string()))
+            .add_trait(trait_)
+            .build();
+
+        assert_eq!(personality1.core_traits, personality2.core_traits);
+        assert_eq!(personality1.metadata, personality2.metadata);
+    }
+
+    #[test]
+    fn test_default_personality() {
+        let personality = Personality::default();
+
+        assert_eq!(personality.core_traits.len(), 2);
+        assert!(personality.metadata.is_none());
+
+        let helpful = &personality.core_traits[0];
+        assert_eq!(helpful.r#trait, "helpful");
+        assert_eq!(helpful.strength, 0.9);
+        assert_eq!(
+            helpful.expression_rules.as_ref().unwrap()[0],
+            "always seeks to assist"
+        );
+
+        let professional = &personality.core_traits[1];
+        assert_eq!(professional.r#trait, "professional");
+        assert_eq!(professional.strength, 0.8);
+        assert_eq!(
+            professional.expression_rules.as_ref().unwrap()[0],
+            "maintains appropriate boundaries"
+        );
+    }
+}
