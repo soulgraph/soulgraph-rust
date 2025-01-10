@@ -17,7 +17,7 @@ impl fmt::Display for CorruptPersonality {
 
 impl error::Error for CorruptPersonality {}
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Personality {
     pub core_traits: Vec<Trait>,
     #[serde(skip_serializing_if = "Option::is_none")]
