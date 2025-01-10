@@ -6,11 +6,11 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryCollection {
-    pub memories: HashMap<String, CoreMemory>,
+    pub memories: HashMap<String, Memory>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CoreMemory {
+pub struct Memory {
     pub id: String,
     pub core_memory: String,
     pub fragments: Vec<Fragment>,
@@ -22,7 +22,7 @@ pub struct CoreMemory {
     pub metadata: MemoryMetadata,
 }
 
-impl Default for CoreMemory {
+impl Default for Memory {
     fn default() -> Self {
         let now = chrono::Utc::now().timestamp_millis();
         Self {
@@ -72,7 +72,7 @@ impl Default for MemoryMetadata {
 }
 
 #[derive(Default)]
-pub struct CoreMemoryBuilder {
+pub struct MemoryBuilder {
     id: String,
     core_memory: String,
     fragments: Vec<Fragment>,
@@ -84,7 +84,7 @@ pub struct CoreMemoryBuilder {
     metadata: Option<MemoryMetadata>,
 }
 
-impl CoreMemoryBuilder {
+impl MemoryBuilder {
     pub fn new(id: String, core_memory: String) -> Self {
         Self {
             id,
@@ -124,8 +124,8 @@ impl CoreMemoryBuilder {
         self
     }
 
-    pub fn build(self) -> CoreMemory {
-        CoreMemory {
+    pub fn build(self) -> Memory {
+        Memory {
             id: self.id,
             core_memory: self.core_memory,
             fragments: self.fragments,
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_default_core_memory() {
-        let memory = CoreMemory::default();
+        let memory = Memory::default();
         assert!(memory.id.is_empty());
         assert!(memory.core_memory.is_empty());
         assert!(memory.fragments.is_empty());
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_builder_pattern() {
-        let memory = CoreMemoryBuilder::new("test-id".to_string(), "test memory".to_string())
+        let memory = MemoryBuilder::new("test-id".to_string(), "test memory".to_string())
             .add_fragment(Fragment::default())
             .add_connection("connection-1".to_string())
             .emotional_signature(EmotionalSignature {
@@ -188,12 +188,12 @@ mod tests {
 
     #[test]
     fn test_serde() {
-        let memory = CoreMemoryBuilder::new("test-id".to_string(), "test memory".to_string())
+        let memory = MemoryBuilder::new("test-id".to_string(), "test memory".to_string())
             .importance_score(0.8)
             .build();
 
         let serialized = serde_json::to_string(&memory).unwrap();
-        let deserialized: CoreMemory = serde_json::from_str(&serialized).unwrap();
+        let deserialized: Memory = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(memory.id, deserialized.id);
         assert_eq!(memory.core_memory, deserialized.core_memory);
