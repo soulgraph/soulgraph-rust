@@ -86,6 +86,7 @@ impl Personality {
         }
     }
 
+    /// Creates a new PersonalityBuilder instance for constructing a Personality
     pub fn builder() -> PersonalityBuilder {
         PersonalityBuilder::new()
     }

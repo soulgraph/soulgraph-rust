@@ -76,16 +76,19 @@ impl Soulgraph {
         }
     }
 
+    /// Performs a GET request to the specified endpoint
     pub async fn get(self, endpoint: &str) -> Result<Response, Error> {
         let url = format(format_args!("{}{}", self.base_url, endpoint));
         self.client.get(url).send().await
     }
 
+    /// Performs a POST request to the specified endpoint with the given JSON payload
     pub async fn post<T: Serialize>(self, endpoint: &str, json: &T) -> Result<Response, Error> {
         let url = format(format_args!("{}{}", self.base_url, endpoint));
         self.client.post(url).json(json).send().await
     }
 
+    /// Performs a PATCH request to the specified endpoint with the given JSON payload
     pub async fn patch<T: Serialize>(self, endpoint: &str, json: &T) -> Result<Response, Error> {
         let url = format(format_args!("{}{}", self.base_url, endpoint));
         self.client.patch(url).json(json).send().await
