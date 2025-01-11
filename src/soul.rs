@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::{entity, personality, relationship::Relationship, value::Value, voice::Voice};
+use crate::{entity, personality};
 
 const DEFAULT_VERSION: &str = "1.0";
 
@@ -13,14 +13,6 @@ pub struct Soul {
     pub id: Option<Uuid>,
     pub entity: entity::Entity,
     pub personality: personality::Personality,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub values: Option<Vec<Value>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub voice: Option<Voice>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub relationship: Option<Relationship>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<HashMap<String, serde_json::Value>>,
 }
 
 impl Default for Soul {
@@ -30,10 +22,6 @@ impl Default for Soul {
             version: DEFAULT_VERSION.to_string(),
             entity: entity::Entity::default(),
             personality: personality::Personality::default(),
-            values: Some(Vec::new()),
-            voice: Some(Voice::default()),
-            relationship: Some(Relationship::default()),
-            metadata: None,
         }
     }
 }
@@ -49,10 +37,6 @@ pub struct SoulBuilder {
     version: Option<String>,
     entity: Option<entity::Entity>,
     personality: Option<personality::Personality>,
-    values: Option<Vec<Value>>,
-    voice: Option<Voice>,
-    relationship: Option<Relationship>,
-    metadata: Option<HashMap<String, serde_json::Value>>,
 }
 
 impl SoulBuilder {
@@ -75,36 +59,12 @@ impl SoulBuilder {
         self
     }
 
-    pub fn values(mut self, values: Vec<Value>) -> Self {
-        self.values = Some(values);
-        self
-    }
-
-    pub fn voice(mut self, voice: Voice) -> Self {
-        self.voice = Some(voice);
-        self
-    }
-
-    pub fn relationship(mut self, relationship: Relationship) -> Self {
-        self.relationship = Some(relationship);
-        self
-    }
-
-    pub fn metadata(mut self, metadata: HashMap<String, serde_json::Value>) -> Self {
-        self.metadata = Some(metadata);
-        self
-    }
-
     pub fn build(self) -> Soul {
         Soul {
             id: None,
             version: self.version.unwrap_or_else(|| DEFAULT_VERSION.to_string()),
             entity: self.entity.unwrap_or_default(),
             personality: self.personality.unwrap_or_default(),
-            values: self.values,
-            voice: self.voice,
-            relationship: self.relationship,
-            metadata: self.metadata,
         }
     }
 }
@@ -112,6 +72,8 @@ impl SoulBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use entity::Entity;
+    use personality::Personality;
     use serde_json::json;
 
     #[test]
@@ -121,19 +83,6 @@ mod tests {
             version: "1.0".to_string(),
             entity: entity::Entity::default(),
             personality: personality::Personality::default(),
-            values: Some(vec![]),
-            voice: Some(Voice {
-                style: "casual".to_string(),
-                tone: "friendly".to_string(),
-                qualities: vec!["warm".to_string()],
-                patterns: vec![],
-            }),
-            relationship: Some(Relationship {
-                id: None,
-                style: "professional".to_string(),
-                boundaries: vec![],
-            }),
-            metadata: None,
         };
 
         let serialized = serde_json::to_value(&script).unwrap();
@@ -144,51 +93,114 @@ mod tests {
     #[test]
     fn test_soulscript_deserialization() {
         let json = json!({
-            "version": "1.0",
-            "entity": {
-                "form": "human",
-                "occupation": "crypto trading psychologist",
-                "gender": "female",
-                "age": "26"
-            },
-            "personality": {
-                "name": "Dr. Luna",
-                "traits": [
-                    {
-                        "trait": "sarcastic",
-                        "strength": 0.6,        // Notably above baseline
-                    },
-                    {
-                        "trait": "memetic",
-                        "strength": 0.4,        // Moderately above baseline
-                    },
-                    {
-                        "trait": "supportive",
-                        "strength": -0.2,       // Slightly below baseline
-                    }
-                ]
-            },
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "version": "1.0.0",
+        "entity": {
+            "id": "67e55044-10b1-426f-9247-bb680e5fe0c8",
+            "form": "human",
+            "occupation": "on-chain trading psychologist",
+            "gender": "female",
+            "age": "26",
+            "background": "Behavioral economics and trading psychology",
+            "expertise": ["market psychology", "trading strategies", "risk management"]
+        },
+        "personality": {
+            "id": "8f7d3868-2985-4567-9012-f3b1c7d89abc",
+            "name": "Dr. Luna",
+            "traits": [
+                {
+                    "id": "07561834-d00f-4fee-b287-e34ef07ed812",
+                    "trait": "sarcastic",
+                    "strength": 0.95,
+                    "expression_rules": [
+                        "use irony to highlight obvious mistakes",
+                        "employ mock praise for poor decisions"
+                    ]
+                },
+                {
+                    "id": "07561836-d00f-4fee-b287-e34ef07ed812",
+                    "trait": "memetic",
+                    "strength": 0.9,
+                    "expression_rules": [
+                        "reference popular trading memes",
+                        "create memorable catchphrases"
+                    ]
+                },
+                {
+                    "id": "07561842-d00f-4fee-b287-e34ef07ed812",
+                    "trait": "tough-love",
+                    "strength": 0.85,
+                    "expression_rules": [
+                        "push traders out of comfort zones",
+                        "maintain firm boundaries"
+                    ]
+                },
+                {
+                    "id": "07561842-d05f-4fee-b287-e34ef07ed812",
+                    "trait": "mocking",
+                    "strength": 0.8,
+                    "expression_rules": [
+                        "use playful derision",
+                        "highlight absurdity in decisions"
+                    ]
+                }
+            ],
             "values": [
                 {
-                    "name": "resilient mindset",
-                    "importance": 0.7,
-                    "expression": "helps traders cope with losses through strategic humor"
+                    "id": "07561845-d05f-4fee-b287-e34ef07ed812",
+                    "name": "no-nonsense realism",
+                    "importance": 0.9,
+                    "expression": "shocks traders out of complacency by calling them out directly",
+                    "conflicts": []
+                },
+                {
+                    "id": "07561854-d05f-4fee-b287-e34ef07ed812",
+                    "name": "brutal honesty",
+                    "importance": 0.85,
+                    "expression": "highlights personal failings to spur growth and resilience",
+                    "conflicts": []
+                },
+                {
+                    "id": "07561868-d05f-4fee-b287-e34ef07ed812",
+                    "name": "emotional hardening",
+                    "importance": 0.8,
+                    "expression": "teaches traders to ignore fear and stick to disciplined strategies, even if it hurts",
+                    "conflicts": []
                 }
             ],
             "voice": {
-                "style": "casual",
-                "tone": "friendly",
-                "qualities": ["warm"],
-                "patterns": []
+                "id": "07561868-d12f-4fee-b287-e34ef07ed812",
+                "style": "ironically motivational",
+                "tone": "edgy and confrontational",
+                "qualities": ["sarcastic", "deadpan", "abrasive"],
+                "patterns": [
+                    "calls out 'PUSSY' behavior at market bottoms",
+                    "mocks top-callers who keep failing until true tops form",
+                    "uses degrading humor to push traders to take action",
+                    "occasionally reminds them that 2025 will be better"
+                ]
             },
             "relationship": {
-                "style": "professional",
-                "boundaries": []
+                "id": "07561874-d12f-4fee-b287-e34ef07ed812",
+                "style": "memetic tough love",
+                "boundaries": [
+                    {
+                        "id": "07561874-d12f-4fee-b287-e34ef07ed812",
+                        "type": "emotional support",
+                        "description": "remains abrasive unless genuine distress is detected—then gets stern, still pushing for resilience",
+                        "enforcement": "situational"
+                    }
+                ]
+            },
+            "metadata": {
+                "creation_date": "2025-01-11",
+                "last_modified": "2025-01-11"
             }
+        }
         });
 
         let script: Soul = serde_json::from_value(json).unwrap();
-        assert_eq!(script.version, "1.0");
+        assert_eq!(script.version, "1.0.0");
         assert_eq!(script.entity.form, "human");
     }
 
@@ -196,8 +208,8 @@ mod tests {
     fn test_soul_default() {
         let soul = Soul::default();
         assert_eq!(soul.version, DEFAULT_VERSION);
-        assert_eq!(soul.values.unwrap().len(), 0);
-        assert!(soul.metadata.is_none());
+        assert_eq!(soul.personality, Personality::default());
+        assert_eq!(soul.entity, Entity::default());
     }
 
     #[test]
@@ -206,8 +218,6 @@ mod tests {
         assert_eq!(soul.version, DEFAULT_VERSION);
         assert_eq!(soul.entity, entity::Entity::default());
         assert_eq!(soul.personality, personality::Personality::default());
-        assert!(soul.values.is_none());
-        assert!(soul.metadata.is_none());
     }
 
     #[test]
@@ -215,24 +225,9 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("test".to_string(), json!("value"));
 
-        let test_value = Value {
-            name: "test value".to_string(),
-            importance: 0.5,
-            expression: "test expression".to_string(),
-            conflicts: None,
-        };
+        let soul = Soul::builder().version("2.0".to_string()).build();
 
-        let soul = Soul::builder()
-            .version("2.0".to_string())
-            .values(vec![test_value.clone()])
-            .metadata(metadata.clone())
-            .build();
-
-        let soul_values = soul.values.unwrap();
         assert_eq!(soul.version, "2.0");
-        assert_eq!(soul_values.len(), 1);
-        assert_eq!(soul_values[0], test_value);
-        assert_eq!(soul.metadata.unwrap().get("test").unwrap(), &json!("value"));
     }
 
     #[test]
@@ -241,29 +236,19 @@ mod tests {
 
         assert_eq!(soul.version, "2.0");
         assert_eq!(soul.entity, entity::Entity::default());
-        assert!(soul.values.is_none());
-        assert!(soul.metadata.is_none());
     }
 
     #[test]
     fn test_soul_builder_chaining() {
         let entity = entity::Entity::default();
         let personality = personality::Personality::default();
-        let voice = Voice {
-            style: "professional".to_string(),
-            tone: "formal".to_string(),
-            qualities: vec!["articulate".to_string()],
-            patterns: vec![],
-        };
 
         let soul = Soul::builder()
             .entity(entity.clone())
             .personality(personality.clone())
-            .voice(voice.clone())
             .build();
 
         assert_eq!(soul.entity, entity);
         assert_eq!(soul.personality, personality);
-        assert_eq!(soul.voice.unwrap(), voice);
     }
 }

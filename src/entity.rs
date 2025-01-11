@@ -144,7 +144,6 @@ mod tests {
 
     #[test]
     fn test_entity_builder_full() {
-        let id = uuid::Uuid::new_v4();
         let expertise = vec!["programming".to_string(), "rust".to_string()];
 
         let entity = EntityBuilder::new()
@@ -157,7 +156,7 @@ mod tests {
             .build()
             .unwrap();
 
-        assert_eq!(entity.id, Some(id));
+        assert_eq!(entity.id, None);
         assert_eq!(entity.form, "human");
         assert_eq!(entity.occupation, "developer");
         assert_eq!(entity.gender, Some("female".to_string()));

@@ -1,10 +1,7 @@
 pub mod entity;
 pub mod memories;
 pub mod personality;
-pub mod relationship;
 pub mod soul;
-pub mod value;
-pub mod voice;
 
 use reqwest::{
     header::{self, ACCEPT, CONTENT_TYPE},

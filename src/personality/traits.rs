@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Trait {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Uuid>,
     pub r#trait: String,
     pub strength: f32,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -41,6 +44,7 @@ impl TraitBuilder {
 
     pub fn build(self) -> Trait {
         Trait {
+            id: None,
             r#trait: self.trait_name,
             strength: self.strength,
             expression_rules: self.expression_rules,

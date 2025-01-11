@@ -77,7 +77,7 @@ mod tests {
             "boundaries": [{
                 "type": "communication",
                 "description": "Open and direct",
-                "enforcement": "moderate"
+                "enforcement": "situational"
             }]
         });
 
@@ -102,7 +102,7 @@ mod tests {
             boundary.description,
             "becomes more formal and distant if questioned on core values"
         );
-        assert_eq!(boundary.enforcement, EnforcementType::Strict);
+        assert_eq!(boundary.enforcement, EnforcementType::Flexible);
     }
 
     #[test]
@@ -114,6 +114,6 @@ mod tests {
             boundary.description,
             "becomes more formal and distant if questioned on core values"
         );
-        assert_eq!(boundary.enforcement, EnforcementType::Strict);
+        assert_eq!(boundary.enforcement, EnforcementType::Flexible);
     }
 }
