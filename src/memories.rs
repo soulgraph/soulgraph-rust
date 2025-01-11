@@ -3,31 +3,82 @@ mod fragment;
 use fragment::Fragment;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryCollection {
-    pub memories: HashMap<String, Memory>,
+    pub memories: HashMap<Uuid, Memory>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Memory {
-    pub id: String,
-    pub core_memory: String,
+    pub id: Option<Uuid>,
+    pub memory: String,
     pub fragments: Vec<Fragment>,
-    pub connections: Vec<String>,
+    #[serde(with = "uuid_vec_format")]
+    pub connections: Vec<Uuid>,
     pub emotional_signature: EmotionalSignature,
+    #[serde(with = "validate_importance_score")]
     pub importance_score: f32,
     pub creation_date: i64,
     pub last_accessed: i64,
     pub metadata: MemoryMetadata,
 }
 
+mod uuid_vec_format {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use uuid::Uuid;
+
+    pub fn serialize<S>(uuids: &[Uuid], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let strings: Vec<String> = uuids.iter().map(|u| u.to_string()).collect();
+        strings.serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Uuid>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let strings: Vec<String> = Vec::deserialize(deserializer)?;
+        strings
+            .into_iter()
+            .map(|s| Uuid::parse_str(&s).map_err(serde::de::Error::custom))
+            .collect()
+    }
+}
+
+mod validate_importance_score {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(score: &f32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(*score)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<f32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let score = f32::deserialize(deserializer)?;
+        if !(0.0..=1.0).contains(&score) {
+            return Err(serde::de::Error::custom(
+                "importance_score must be between 0 and 1",
+            ));
+        }
+        Ok(score)
+    }
+}
+
 impl Default for Memory {
     fn default() -> Self {
         let now = chrono::Utc::now().timestamp_millis();
         Self {
-            id: String::new(),
-            core_memory: String::new(),
+            id: None,
+            memory: String::new(),
             fragments: Vec::new(),
             connections: Vec::new(),
             emotional_signature: EmotionalSignature::default(),
@@ -41,21 +92,72 @@ impl Default for Memory {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmotionalSignature {
+    pub id: Option<Uuid>,
+    #[serde(with = "validate_valence")]
     pub valence: f32,
+    #[serde(with = "validate_intensity")]
     pub intensity: f32,
 }
 
 impl Default for EmotionalSignature {
     fn default() -> Self {
         Self {
+            id: None,
             valence: 0.0,
             intensity: 0.0,
         }
     }
 }
 
+mod validate_valence {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(valence: &f32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(*valence)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<f32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let valence = f32::deserialize(deserializer)?;
+        if !(-1.0..=1.0).contains(&valence) {
+            return Err(serde::de::Error::custom("valence must be between -1 and 1"));
+        }
+        Ok(valence)
+    }
+}
+
+mod validate_intensity {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(intensity: &f32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(*intensity)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<f32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let intensity = f32::deserialize(deserializer)?;
+        if !(0.0..=1.0).contains(&intensity) {
+            return Err(serde::de::Error::custom(
+                "intensity must be between 0 and 1",
+            ));
+        }
+        Ok(intensity)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryMetadata {
+    pub id: Option<Uuid>,
     pub topic_tags: Vec<String>,
     pub personality_influence: Vec<String>,
     pub memory_type: String,
@@ -64,6 +166,7 @@ pub struct MemoryMetadata {
 impl Default for MemoryMetadata {
     fn default() -> Self {
         Self {
+            id: None,
             topic_tags: Vec::new(),
             personality_influence: Vec::new(),
             memory_type: "default".to_string(),
@@ -73,10 +176,9 @@ impl Default for MemoryMetadata {
 
 #[derive(Default)]
 pub struct MemoryBuilder {
-    id: String,
-    core_memory: String,
+    memory: String,
     fragments: Vec<Fragment>,
-    connections: Vec<String>,
+    connections: Vec<Uuid>,
     emotional_signature: Option<EmotionalSignature>,
     importance_score: f32,
     creation_date: i64,
@@ -85,10 +187,9 @@ pub struct MemoryBuilder {
 }
 
 impl MemoryBuilder {
-    pub fn new(id: String, core_memory: String) -> Self {
+    pub fn new(memory: String) -> Self {
         Self {
-            id,
-            core_memory,
+            memory,
             creation_date: chrono::Utc::now().timestamp_millis(),
             ..Default::default()
         }
@@ -99,7 +200,7 @@ impl MemoryBuilder {
         self
     }
 
-    pub fn add_connection(mut self, connection: String) -> Self {
+    pub fn add_connection(mut self, connection: Uuid) -> Self {
         self.connections.push(connection);
         self
     }
@@ -126,24 +227,19 @@ impl MemoryBuilder {
 
     pub fn build(self) -> Memory {
         Memory {
-            id: self.id,
-            core_memory: self.core_memory,
+            id: None,
+            memory: self.memory,
             fragments: self.fragments,
             connections: self.connections,
-            emotional_signature: self.emotional_signature.unwrap_or(EmotionalSignature {
-                valence: 0.0,
-                intensity: 0.0,
-            }),
+            emotional_signature: self
+                .emotional_signature
+                .unwrap_or(EmotionalSignature::default()),
             importance_score: self.importance_score,
             creation_date: self.creation_date,
             last_accessed: self
                 .last_accessed
                 .unwrap_or_else(|| chrono::Utc::now().timestamp_millis()),
-            metadata: self.metadata.unwrap_or_else(|| MemoryMetadata {
-                topic_tags: Vec::new(),
-                personality_influence: Vec::new(),
-                memory_type: "default".to_string(),
-            }),
+            metadata: self.metadata.unwrap_or_else(|| MemoryMetadata::default()),
         }
     }
 }
@@ -155,8 +251,8 @@ mod tests {
     #[test]
     fn test_default_core_memory() {
         let memory = Memory::default();
-        assert!(memory.id.is_empty());
-        assert!(memory.core_memory.is_empty());
+        assert!(memory.id.is_none());
+        assert!(memory.memory.is_empty());
         assert!(memory.fragments.is_empty());
         assert!(memory.connections.is_empty());
         assert_eq!(memory.emotional_signature.valence, 0.0);
@@ -167,20 +263,22 @@ mod tests {
 
     #[test]
     fn test_builder_pattern() {
-        let memory = MemoryBuilder::new("test-id".to_string(), "test memory".to_string())
+        let uuid = Uuid::new_v4();
+        let memory = MemoryBuilder::new("test memory".to_string())
             .add_fragment(Fragment::default())
-            .add_connection("connection-1".to_string())
+            .add_connection(uuid)
             .emotional_signature(EmotionalSignature {
+                id: None,
                 valence: 0.5,
                 intensity: 0.7,
             })
             .importance_score(0.8)
             .build();
 
-        assert_eq!(memory.id, "test-id");
-        assert_eq!(memory.core_memory, "test memory");
+        assert!(memory.id.is_none());
+        assert_eq!(memory.memory, "test memory");
         assert_eq!(memory.fragments.len(), 1);
-        assert_eq!(memory.connections, vec!["connection-1"]);
+        assert_eq!(memory.connections, vec![uuid]);
         assert_eq!(memory.emotional_signature.valence, 0.5);
         assert_eq!(memory.emotional_signature.intensity, 0.7);
         assert_eq!(memory.importance_score, 0.8);
@@ -188,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_serde() {
-        let memory = MemoryBuilder::new("test-id".to_string(), "test memory".to_string())
+        let memory = MemoryBuilder::new("test memory".to_string())
             .importance_score(0.8)
             .build();
 
@@ -196,7 +294,7 @@ mod tests {
         let deserialized: Memory = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(memory.id, deserialized.id);
-        assert_eq!(memory.core_memory, deserialized.core_memory);
+        assert_eq!(memory.memory, deserialized.memory);
         assert_eq!(memory.importance_score, deserialized.importance_score);
     }
 }

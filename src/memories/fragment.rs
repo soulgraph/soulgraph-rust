@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -10,6 +11,7 @@ pub enum FragmentType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Context {
+    pub id: Option<Uuid>,
     pub topic: String,
     pub user_state: String,
 }
@@ -17,6 +19,7 @@ pub struct Context {
 impl Default for Context {
     fn default() -> Self {
         Self {
+            id: None,
             topic: "general".to_string(),
             user_state: "neutral".to_string(),
         }
@@ -25,17 +28,69 @@ impl Default for Context {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Fragment {
+    pub id: Option<Uuid>,
     #[serde(rename = "type")]
     pub fragment_type: FragmentType,
     pub content: String,
     pub timestamp: i64,
+    #[serde(with = "validate_importance")]
     pub importance: f32,
+    #[serde(with = "validate_emotional_valence")]
     pub emotional_valence: f32,
     pub context: Context,
 }
 
+mod validate_importance {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(importance: &f32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(*importance)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<f32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let importance = f32::deserialize(deserializer)?;
+        if !(0.0..=1.0).contains(&importance) {
+            return Err(serde::de::Error::custom(
+                "importance must be between 0 and 1",
+            ));
+        }
+        Ok(importance)
+    }
+}
+
+mod validate_emotional_valence {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(valence: &f32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(*valence)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<f32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let valence = f32::deserialize(deserializer)?;
+        if !(-1.0..=1.0).contains(&valence) {
+            return Err(serde::de::Error::custom(
+                "emotional_valence must be between -1 and 1",
+            ));
+        }
+        Ok(valence)
+    }
+}
+
 #[derive(Default)]
 pub struct FragmentBuilder {
+    uuid: Option<Uuid>,
     fragment_type: FragmentType,
     content: String,
     timestamp: Option<i64>,
@@ -47,6 +102,7 @@ pub struct FragmentBuilder {
 impl Default for Fragment {
     fn default() -> Self {
         Self {
+            id: None,
             fragment_type: FragmentType::default(),
             content: String::new(),
             timestamp: chrono::Utc::now().timestamp_millis(),
@@ -102,6 +158,7 @@ impl FragmentBuilder {
 
     pub fn build(self) -> Fragment {
         Fragment {
+            id: None,
             fragment_type: self.fragment_type,
             content: self.content,
             timestamp: self
@@ -110,6 +167,7 @@ impl FragmentBuilder {
             importance: self.importance,
             emotional_valence: self.emotional_valence,
             context: self.context.unwrap_or_else(|| Context {
+                id: None,
                 topic: "general".to_string(),
                 user_state: "neutral".to_string(),
             }),
@@ -152,6 +210,7 @@ mod tests {
             .importance(0.8)
             .emotional_valence(0.5)
             .context(Context {
+                id: None,
                 topic: "test".to_string(),
                 user_state: "happy".to_string(),
             })
