@@ -19,7 +19,7 @@ impl error::Error for CorruptPersonality {}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Personality {
-    pub core_traits: Vec<Trait>,
+    pub traits: Vec<Trait>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, serde_json::Value>>,
 }
@@ -27,7 +27,7 @@ pub struct Personality {
 impl Default for Personality {
     fn default() -> Self {
         Self {
-            core_traits: vec![
+            traits: vec![
                 Trait {
                     r#trait: "helpful".to_string(),
                     strength: 0.9,
@@ -46,7 +46,7 @@ impl Default for Personality {
 
 #[derive(Default)]
 pub struct PersonalityBuilder {
-    core_traits: Vec<Trait>,
+    traits: Vec<Trait>,
     metadata: Option<HashMap<String, serde_json::Value>>,
 }
 
@@ -56,7 +56,7 @@ impl PersonalityBuilder {
     }
 
     pub fn add_trait(mut self, trait_: Trait) -> Self {
-        self.core_traits.push(trait_);
+        self.traits.push(trait_);
         self
     }
 
@@ -72,7 +72,7 @@ impl PersonalityBuilder {
 
     pub fn build(self) -> Personality {
         Personality {
-            core_traits: self.core_traits,
+            traits: self.traits,
             metadata: self.metadata,
         }
     }
@@ -81,7 +81,7 @@ impl PersonalityBuilder {
 impl Personality {
     pub fn new() -> Self {
         Self {
-            core_traits: Vec::new(),
+            traits: Vec::new(),
             metadata: None,
         }
     }
@@ -155,7 +155,7 @@ mod tests {
     fn test_personality_builder_empty() {
         let personality = Personality::builder().build();
 
-        assert!(personality.core_traits.is_empty());
+        assert!(personality.traits.is_empty());
         assert!(personality.metadata.is_none());
     }
 
@@ -168,8 +168,8 @@ mod tests {
 
         let personality = Personality::builder().add_trait(trait_).build();
 
-        assert_eq!(personality.core_traits.len(), 1);
-        let added_trait = &personality.core_traits[0];
+        assert_eq!(personality.traits.len(), 1);
+        let added_trait = &personality.traits[0];
         assert_eq!(added_trait.r#trait, "kind");
         assert_eq!(added_trait.strength, 0.7);
         assert_eq!(
@@ -215,9 +215,9 @@ mod tests {
             .build();
 
         // Test traits
-        assert_eq!(personality.core_traits.len(), 2);
-        assert_eq!(personality.core_traits[0].r#trait, "intelligent");
-        assert_eq!(personality.core_traits[1].r#trait, "creative");
+        assert_eq!(personality.traits.len(), 2);
+        assert_eq!(personality.traits[0].r#trait, "intelligent");
+        assert_eq!(personality.traits[1].r#trait, "creative");
 
         // Test metadata
         let metadata = personality.metadata.unwrap();
@@ -240,7 +240,7 @@ mod tests {
             .add_trait(trait_)
             .build();
 
-        assert_eq!(personality1.core_traits, personality2.core_traits);
+        assert_eq!(personality1.traits, personality2.traits);
         assert_eq!(personality1.metadata, personality2.metadata);
     }
 
@@ -248,10 +248,10 @@ mod tests {
     fn test_default_personality() {
         let personality = Personality::default();
 
-        assert_eq!(personality.core_traits.len(), 2);
+        assert_eq!(personality.traits.len(), 2);
         assert!(personality.metadata.is_none());
 
-        let helpful = &personality.core_traits[0];
+        let helpful = &personality.traits[0];
         assert_eq!(helpful.r#trait, "helpful");
         assert_eq!(helpful.strength, 0.9);
         assert_eq!(
@@ -259,7 +259,7 @@ mod tests {
             "always seeks to assist"
         );
 
-        let professional = &personality.core_traits[1];
+        let professional = &personality.traits[1];
         assert_eq!(professional.r#trait, "professional");
         assert_eq!(professional.strength, 0.8);
         assert_eq!(

@@ -143,7 +143,7 @@ mod tests {
             },
             "personality": {
                 "name": "Dr. Luna",
-                "core_traits": [
+                "traits": [
                     {
                         "trait": "sarcastic",
                         "strength": 0.6,        // Notably above baseline
