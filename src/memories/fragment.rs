@@ -11,6 +11,7 @@ pub enum FragmentType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Context {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<Uuid>,
     pub topic: String,
     pub user_state: String,
@@ -28,6 +29,7 @@ impl Default for Context {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Fragment {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<Uuid>,
     #[serde(rename = "type")]
     pub fragment_type: FragmentType,
@@ -90,7 +92,6 @@ mod validate_emotional_valence {
 
 #[derive(Default)]
 pub struct FragmentBuilder {
-    uuid: Option<Uuid>,
     fragment_type: FragmentType,
     content: String,
     timestamp: Option<i64>,

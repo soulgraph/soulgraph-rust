@@ -12,6 +12,7 @@ pub struct MemoryCollection {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Memory {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<Uuid>,
     pub memory: String,
     pub fragments: Vec<Fragment>,
@@ -92,6 +93,7 @@ impl Default for Memory {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmotionalSignature {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<Uuid>,
     #[serde(with = "validate_valence")]
     pub valence: f32,
@@ -157,6 +159,7 @@ mod validate_intensity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<Uuid>,
     pub topic_tags: Vec<String>,
     pub personality_influence: Vec<String>,
