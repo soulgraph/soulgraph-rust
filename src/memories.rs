@@ -234,15 +234,13 @@ impl MemoryBuilder {
             memory: self.memory,
             fragments: self.fragments,
             connections: self.connections,
-            emotional_signature: self
-                .emotional_signature
-                .unwrap_or(EmotionalSignature::default()),
+            emotional_signature: self.emotional_signature.unwrap_or_default(),
             importance_score: self.importance_score,
             creation_date: self.creation_date,
             last_accessed: self
                 .last_accessed
                 .unwrap_or_else(|| chrono::Utc::now().timestamp_millis()),
-            metadata: self.metadata.unwrap_or_else(|| MemoryMetadata::default()),
+            metadata: self.metadata.unwrap_or_default(),
         }
     }
 }
