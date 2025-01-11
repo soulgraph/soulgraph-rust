@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::{entity, personality, relationship::Relationship, value::Value, voice::Voice};
 
@@ -8,10 +9,15 @@ const DEFAULT_VERSION: &str = "1.0";
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Soul {
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Uuid>,
     pub entity: entity::Entity,
     pub personality: personality::Personality,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<Vec<Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub voice: Option<Voice>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub relationship: Option<Relationship>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, serde_json::Value>>,
@@ -20,6 +26,7 @@ pub struct Soul {
 impl Default for Soul {
     fn default() -> Self {
         Self {
+            id: None,
             version: DEFAULT_VERSION.to_string(),
             entity: entity::Entity::default(),
             personality: personality::Personality::default(),
@@ -90,6 +97,7 @@ impl SoulBuilder {
 
     pub fn build(self) -> Soul {
         Soul {
+            id: None,
             version: self.version.unwrap_or_else(|| DEFAULT_VERSION.to_string()),
             entity: self.entity.unwrap_or_default(),
             personality: self.personality.unwrap_or_default(),
@@ -109,6 +117,7 @@ mod tests {
     #[test]
     fn test_soulscript_serialization() {
         let script = Soul {
+            id: None,
             version: "1.0".to_string(),
             entity: entity::Entity::default(),
             personality: personality::Personality::default(),
@@ -120,6 +129,7 @@ mod tests {
                 patterns: vec![],
             }),
             relationship: Some(Relationship {
+                id: None,
                 style: "professional".to_string(),
                 boundaries: vec![],
             }),

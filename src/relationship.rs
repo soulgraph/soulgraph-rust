@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Relationship {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<uuid::Uuid>,
     pub style: String,
     pub boundaries: Vec<Boundary>,
 }
@@ -9,25 +11,38 @@ pub struct Relationship {
 impl Default for Relationship {
     fn default() -> Self {
         Self {
+            id: None,
             style: "mentor-like guidance through respect and shared purpose".to_string(),
             boundaries: vec![Boundary::default()],
         }
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum EnforcementType {
+    Strict,
+    #[default]
+    Flexible,
+    Situational,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Boundary {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<uuid::Uuid>,
     pub r#type: String,
     pub description: String,
-    pub enforcement: String,
+    pub enforcement: EnforcementType,
 }
 
 impl Default for Boundary {
     fn default() -> Self {
         Self {
+            id: None,
             r#type: "core values".to_string(),
             description: "becomes more formal and distant if questioned on core values".to_string(),
-            enforcement: "strict".to_string(),
+            enforcement: EnforcementType::default(),
         }
     }
 }
@@ -40,11 +55,13 @@ mod tests {
     #[test]
     fn test_relationship_serialization() {
         let relationship = Relationship {
+            id: None,
             style: "professional".to_string(),
             boundaries: vec![Boundary {
+                id: None,
                 r#type: "personal".to_string(),
                 description: "Maintain professional distance".to_string(),
-                enforcement: "strict".to_string(),
+                enforcement: EnforcementType::default(),
             }],
         };
 
@@ -85,7 +102,7 @@ mod tests {
             boundary.description,
             "becomes more formal and distant if questioned on core values"
         );
-        assert_eq!(boundary.enforcement, "strict");
+        assert_eq!(boundary.enforcement, EnforcementType::Strict);
     }
 
     #[test]
@@ -97,6 +114,6 @@ mod tests {
             boundary.description,
             "becomes more formal and distant if questioned on core values"
         );
-        assert_eq!(boundary.enforcement, "strict");
+        assert_eq!(boundary.enforcement, EnforcementType::Strict);
     }
 }
