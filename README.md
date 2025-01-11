@@ -84,7 +84,7 @@ soulgraph = { version = "0.1.0", features = ["async-std", "memory-cache"] }
 Here's a simple example to get you started with Soulgraph:
 
 ```rust
-use soulgraph::{Soulgraph, Soul, Personality};
+use soulgraph::{Soulgraph, Soul, personality::{Personality, traits::TraitBuilder}};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -94,20 +94,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .base_url("https://api.soulgraph.com")
         .build();
 
+    // Create traits for the personality
+    let helpful = TraitBuilder::new("helpful")
+        .strength(0.9)
+        .add_expression_rule("always seeks to assist")
+        .build();
+
+    let knowledgeable = TraitBuilder::new("knowledgeable")
+        .strength(0.8)
+        .add_expression_rule("provides detailed explanations")
+        .build();
+
     // Create a personality
     let personality = Personality::builder()
         .name("Assistant")
-        .traits(vec!["helpful", "knowledgeable", "friendly"])
-        .build();
+        .add_trait(helpful)
+        .add_trait(knowledgeable)
+        .build()
+        .unwrap();
 
     // Create a soul with the personality
     let soul = Soul::builder()
         .personality(personality)
         .build();
 
-    // Create the soul in Soulgraph
-    let created_soul = client.create_soul(&soul).await?;
-    println!("Created soul with ID: {}", created_soul.id);
+    println!("Created soul with ID: {}", soul.id.unwrap_or_default());
 
     Ok(())
 }
@@ -131,26 +142,16 @@ let personality = Personality::builder()
 ### Managing Memory and Experiences
 
 ```rust
-use soulgraph::{Memory, Emotion};
+use soulgraph::memories::{Memory, MemoryBuilder};
 
-let memory = Memory::builder()
-    .description("First successful training session")
-    .emotion(Emotion::builder()
-        .type_("pride")
-        .intensity(0.8)
-        .build())
+let memory = MemoryBuilder::new("First successful training session".to_string())
+    .importance_score(0.8)
+    .emotional_signature(EmotionalSignature {
+        id: None,
+        valence: 0.8,
+        intensity: 0.9,
+    })
     .build();
-
-soul.add_memory(memory).await?;
-```
-
-### Handling Interactions
-
-```rust
-use soulgraph::{Interaction, Response};
-
-let response = soul.interact("How should I approach this challenge?").await?;
-println!("Soul's response: {}", response.content);
 ```
 
 ## API Documentation
@@ -207,5 +208,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Thanks to all contributors who have helped shape this SDK
 - Built with ❤️ for the AI development community
