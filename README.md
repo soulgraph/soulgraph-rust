@@ -118,7 +118,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .personality(personality)
         .build();
 
-    println!("Created soul with ID: {}", soul.id.unwrap_or_default());
+    // Create the soul in Soulgraph
+    let created_soul = Soul::create(&soul, client.clone()).await?;
+    println!("Created soul with ID: {}", created_soul.id.unwrap());
+
+    // Retrieve the soul by ID
+    let soul_id = created_soul.id.unwrap().to_string();
+    let retrieved_soul = Soul::get(&soul_id, client.clone()).await?;
+    println!("Retrieved soul: {}", retrieved_soul.personality.name);
+
+    // Delete the soul
+    Soul::delete(&soul_id, client).await?;
+    println!("Soul deleted successfully");
 
     Ok(())
 }

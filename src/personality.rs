@@ -187,7 +187,7 @@ impl PersonalityBuilder {
 impl Personality {
     /// Creates a new PersonalityBuilder instance for constructing a Personality
     pub fn builder() -> PersonalityBuilder {
-        PersonalityBuilder::new()
+        PersonalityBuilder::default()
     }
 
     /// Get the `Personality` with the given `id`.
@@ -230,7 +230,7 @@ impl Personality {
         soul: Soulgraph,
     ) -> Result<Personality, CorruptPersonality> {
         if let Ok(response) = soul
-            .patch(format!("/personality/{id}").as_str(), personality)
+            .put(format!("/personality/{id}").as_str(), personality)
             .await
         {
             match response.status() {
@@ -244,7 +244,20 @@ impl Personality {
             Err(CorruptPersonality)
         }
     }
+
+    /// Delete a `Personality` stored under `id`.
+    pub async fn delete(id: &str, soul: Soulgraph) -> Result<(), CorruptPersonality> {
+        if let Ok(response) = soul.delete(format!("/personality/{id}").as_str()).await {
+            match response.status() {
+                reqwest::StatusCode::OK => Ok(()),
+                _ => Err(CorruptPersonality),
+            }
+        } else {
+            Err(CorruptPersonality)
+        }
+    }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -322,9 +335,11 @@ mod tests {
         assert_eq!(personality.traits[0].r#trait, "sarcastic");
         assert_eq!(personality.traits[1].r#trait, "memetic");
 
+        let date_string = chrono::Utc::now().date_naive().to_string();
         let metadata = personality.metadata.unwrap();
         assert_eq!(metadata.get("creation_date").unwrap(), "2025-01-11");
-        assert_eq!(metadata.get("last_modified").unwrap(), "2025-01-11");
+        // Modifications are recorded by builder upon `build` call in builder
+        assert_eq!(metadata.get("last_modified").unwrap(), date_string.as_str());
     }
 
     #[test]

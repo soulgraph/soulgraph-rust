@@ -75,21 +75,37 @@ impl Soulgraph {
 
     /// Performs a GET request to the specified endpoint
     pub async fn get(self, endpoint: &str) -> Result<Response, Error> {
-        let url = format(format_args!("{}{}", self.base_url, endpoint));
+        let url = format_url(self.base_url.as_str(), endpoint);
         self.client.get(url).send().await
     }
 
     /// Performs a POST request to the specified endpoint with the given JSON payload
     pub async fn post<T: Serialize>(self, endpoint: &str, json: &T) -> Result<Response, Error> {
-        let url = format(format_args!("{}{}", self.base_url, endpoint));
+        let url = format_url(self.base_url.as_str(), endpoint);
         self.client.post(url).json(json).send().await
+    }
+
+    /// Performs a PUT request to the specified endpoint with the given JSON payload
+    pub async fn put<T: Serialize>(self, endpoint: &str, json: &T) -> Result<Response, Error> {
+        let url = format_url(self.base_url.as_str(), endpoint);
+        self.client.put(url).json(json).send().await
     }
 
     /// Performs a PATCH request to the specified endpoint with the given JSON payload
     pub async fn patch<T: Serialize>(self, endpoint: &str, json: &T) -> Result<Response, Error> {
-        let url = format(format_args!("{}{}", self.base_url, endpoint));
+        let url = format_url(self.base_url.as_str(), endpoint);
         self.client.patch(url).json(json).send().await
     }
+
+    /// Performs a DELETE request to the specified endpoint with the given JSON payload
+    pub async fn delete(self, endpoint: &str) -> Result<Response, Error> {
+        let url = format_url(self.base_url.as_str(), endpoint);
+        self.client.delete(url).send().await
+    }
+}
+
+fn format_url(base_url: &str, endpoint: &str) -> String {
+    format(format_args!("{}{}", base_url, endpoint))
 }
 
 #[cfg(test)]

@@ -2,8 +2,21 @@ mod fragment;
 
 use fragment::Fragment;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, error, fmt};
 use uuid::Uuid;
+
+use crate::Soulgraph;
+
+#[derive(Debug)]
+pub struct CorruptMemory;
+
+impl fmt::Display for CorruptMemory {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "personality is corrupted")
+    }
+}
+
+impl error::Error for CorruptMemory {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryCollection {
@@ -24,6 +37,55 @@ pub struct Memory {
     pub creation_date: i64,
     pub last_accessed: i64,
     pub metadata: MemoryMetadata,
+}
+
+impl Memory {
+    /// Creates a new MemoryBuilder instance for constructing a Memory
+    pub fn builder() -> MemoryBuilder {
+        MemoryBuilder::default()
+    }
+
+    /// Get the `Memory` with the given `id`.
+    pub async fn get(id: &str, soul: Soulgraph) -> Result<Memory, CorruptMemory> {
+        if let Ok(response) = soul.get(format!("/personality/{id}").as_str()).await {
+            match response.status() {
+                reqwest::StatusCode::OK => match response.json::<Memory>().await {
+                    Ok(p) => Ok(p),
+                    Err(_) => Err(CorruptMemory),
+                },
+                _ => Err(CorruptMemory),
+            }
+        } else {
+            Err(CorruptMemory)
+        }
+    }
+
+    /// Create a `Memory`.
+    pub async fn create(personality: &Memory, soul: Soulgraph) -> Result<Memory, CorruptMemory> {
+        if let Ok(response) = soul.post("/personality", personality).await {
+            match response.status() {
+                reqwest::StatusCode::OK => match response.json::<Memory>().await {
+                    Ok(p) => Ok(p),
+                    Err(_) => Err(CorruptMemory),
+                },
+                _ => Err(CorruptMemory),
+            }
+        } else {
+            Err(CorruptMemory)
+        }
+    }
+
+    /// Delete a `Memory` stored under `id`.
+    pub async fn delete(id: &str, soul: Soulgraph) -> Result<(), CorruptMemory> {
+        if let Ok(response) = soul.delete(format!("/personality/{id}").as_str()).await {
+            match response.status() {
+                reqwest::StatusCode::OK => Ok(()),
+                _ => Err(CorruptMemory),
+            }
+        } else {
+            Err(CorruptMemory)
+        }
+    }
 }
 
 mod uuid_vec_format {

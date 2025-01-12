@@ -1,10 +1,22 @@
+use std::{error, fmt};
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::{entity, personality};
+use crate::{entity, personality, Soulgraph};
 
 const DEFAULT_VERSION: &str = "1.0";
+
+#[derive(Debug)]
+pub struct CorruptSoul;
+
+impl fmt::Display for CorruptSoul {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "personality is corrupted")
+    }
+}
+
+impl error::Error for CorruptSoul {}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Soul {
@@ -27,8 +39,51 @@ impl Default for Soul {
 }
 
 impl Soul {
+    /// Creates a new SoulBuilder instance for constructing a Soul
     pub fn builder() -> SoulBuilder {
         SoulBuilder::default()
+    }
+
+    /// Get the `Soul` with the given `id`.
+    pub async fn get(id: &str, soul: Soulgraph) -> Result<Soul, CorruptSoul> {
+        if let Ok(response) = soul.get(format!("/personality/{id}").as_str()).await {
+            match response.status() {
+                reqwest::StatusCode::OK => match response.json::<Soul>().await {
+                    Ok(p) => Ok(p),
+                    Err(_) => Err(CorruptSoul),
+                },
+                _ => Err(CorruptSoul),
+            }
+        } else {
+            Err(CorruptSoul)
+        }
+    }
+
+    /// Create a `Soul`.
+    pub async fn create(personality: &Soul, soul: Soulgraph) -> Result<Soul, CorruptSoul> {
+        if let Ok(response) = soul.post("/personality", personality).await {
+            match response.status() {
+                reqwest::StatusCode::OK => match response.json::<Soul>().await {
+                    Ok(p) => Ok(p),
+                    Err(_) => Err(CorruptSoul),
+                },
+                _ => Err(CorruptSoul),
+            }
+        } else {
+            Err(CorruptSoul)
+        }
+    }
+
+    /// Delete a `Soul` stored under `id`.
+    pub async fn delete(id: &str, soul: Soulgraph) -> Result<(), CorruptSoul> {
+        if let Ok(response) = soul.delete(format!("/personality/{id}").as_str()).await {
+            match response.status() {
+                reqwest::StatusCode::OK => Ok(()),
+                _ => Err(CorruptSoul),
+            }
+        } else {
+            Err(CorruptSoul)
+        }
     }
 }
 
@@ -75,6 +130,7 @@ mod tests {
     use entity::Entity;
     use personality::Personality;
     use serde_json::json;
+    use std::collections::HashMap;
 
     #[test]
     fn test_soulscript_serialization() {
